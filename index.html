@@ -1,0 +1,1378 @@
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f0ebe0">
+<title>Ремонт — учёт расходов</title>
+<style>
+:root {
+  --bg:#f0ebe0; --surface:#e8e0d0; --card:#faf6ef; --border:#d4c9b5;
+  --accent:#9b5a3c; --accent2:#8fa8b8; --green:#6b8c6b; --text:#2c2219;
+  --muted:#8a7a6a; --danger:#c04040; --gold:#c8963c; --wood:#7a5c3e;
+  --r:14px; --rs:9px; --sh:0 2px 12px rgba(100,70,40,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',system-ui,sans-serif;font-size:15px;min-height:100dvh;display:flex;flex-direction:column}
+/* AUTH */
+#authScreen{position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}
+.auth-arch{width:56px;height:64px;margin-bottom:20px}
+#authScreen h2{font-size:22px;font-weight:800;color:var(--accent);margin-bottom:6px}
+#authScreen p{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.5}
+.auth-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:24px 20px;width:100%;max-width:380px;box-shadow:var(--sh)}
+.auth-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:16px;padding:13px 14px;outline:none;font-family:inherit;margin-bottom:12px;text-align:center;transition:border-color .2s}
+.auth-input:focus{border-color:var(--accent)}
+.auth-btn{width:100%;background:var(--accent);color:white;border:none;border-radius:var(--rs);padding:14px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 16px rgba(155,90,60,.25)}
+.auth-hint{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px}
+.auth-prev{margin-top:14px;border-top:1px solid var(--border);padding-top:12px;text-align:left}
+.auth-prev-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:800;margin-bottom:8px}
+.auth-user-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);cursor:pointer;margin-bottom:6px;font-weight:700;font-size:14px;transition:border-color .2s}
+.auth-user-row:hover{border-color:var(--accent)}
+/* HEADER */
+header{background:var(--card);border-bottom:1.5px solid var(--border);padding:14px 18px 11px;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-text{font-size:15px;font-weight:800;color:var(--accent)}
+.logo-sub{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.04em}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.total-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.total-amount{font-size:20px;font-weight:800;color:var(--accent)}
+.user-badge{font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;padding:3px 8px;border:1px solid var(--border);border-radius:20px;background:var(--card)}
+.user-badge:active{color:var(--accent)}
+.tabs{display:flex;gap:5px}
+.tab{flex:1;padding:7px 4px;background:none;border:1.5px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;text-align:center;letter-spacing:.02em}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(155,90,60,.3)}
+/* MAIN */
+main{flex:1;padding:16px 16px 96px;overflow-y:auto}
+.view{display:none}.view.active{display:block}
+/* CARDS */
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh)}
+.section-title{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 9px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+/* BUDGET */
+.budget-block{padding:14px 16px;margin-bottom:10px}
+.budget-empty{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:700;color:var(--muted);justify-content:center;padding:13px;border-style:dashed;transition:border-color .2s}
+.budget-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.budget-lbl{font-size:12px;color:var(--muted);font-weight:600}
+.budget-val{font-size:14px;font-weight:800}
+.budget-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:8px 0 4px}
+.budget-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:4px;transition:width .6s}
+.budget-fill.over{background:linear-gradient(90deg,var(--gold),var(--danger))}
+.funds-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.fund-chip{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700}
+.fund-chip.own{background:rgba(107,140,107,.15);color:var(--green);border:1px solid rgba(107,140,107,.3)}
+.fund-chip.credit{background:rgba(143,168,184,.15);color:#5a7d91;border:1px solid rgba(143,168,184,.3)}
+.fund-chip.totf{background:rgba(155,90,60,.10);color:var(--accent);border:1px solid rgba(155,90,60,.2)}
+/* STATS */
+.stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-card{padding:12px 10px;text-align:center}
+.stat-value{font-size:17px;font-weight:800;margin-bottom:3px}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+/* CAT BARS */
+.cat-bar{padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:transform .15s}
+.cat-bar:active{transform:scale(.985)}
+.cat-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.cat-name{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+.cat-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.cat-amount{font-size:15px;font-weight:800;color:var(--accent)}
+.prog-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s}
+.cat-count{font-size:11px;color:var(--muted);margin-top:5px}
+/* EXPENSE ITEMS */
+.expense-item{padding:12px 13px;margin-bottom:8px;display:flex;gap:11px;align-items:flex-start}
+.exp-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:1px}
+.exp-body{flex:1;min-width:0}
+.exp-desc{font-weight:700;font-size:14px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700}
+.tag-cat{background:rgba(155,90,60,.12);color:var(--accent)}
+.tag-zone{background:rgba(143,168,184,.2);color:#5a7d91}
+.exp-date{font-size:11px;color:var(--muted)}
+.exp-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.exp-amount{font-size:15px;font-weight:800}
+.exp-thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;cursor:pointer;border:1.5px solid var(--border);flex-shrink:0;align-self:center}
+.edit-btn{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1;transition:color .2s}
+.edit-btn:hover{color:var(--accent2)}
+.del-btn{background:none;border:none;color:var(--border);font-size:16px;cursor:pointer;padding:2px;line-height:1;transition:color .2s}
+.del-btn:hover{color:var(--danger)}
+/* FILTER */
+.filter-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{white-space:nowrap;padding:6px 13px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.filter-chip.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+/* ZONES */
+.zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.zone-card{padding:14px 12px;cursor:pointer;transition:border-color .2s}
+.zone-card.selected{border-color:var(--accent2)!important}
+.zone-icon{font-size:22px;margin-bottom:6px}
+.zone-name{font-size:13px;font-weight:800;margin-bottom:3px}
+.zone-amount{font-size:15px;font-weight:800;color:var(--accent)}
+.zone-count{font-size:11px;color:var(--muted);margin-top:2px}
+/* PLAN */
+.plan-summary{background:linear-gradient(135deg,rgba(143,168,184,.15),rgba(143,168,184,.05));border:1.5px solid var(--accent2);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
+.plan-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.plan-lbl{font-size:12px;color:var(--muted);font-weight:600}
+.plan-val{font-size:15px;font-weight:800}
+.plan-item{border-color:var(--accent2)!important;opacity:.93}
+.plan-badge{font-size:10px;font-weight:800;background:rgba(143,168,184,.2);color:var(--accent2);border:1px solid var(--accent2);border-radius:20px;padding:2px 8px;letter-spacing:.04em}
+.fact-btn{background:var(--accent2);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+/* FAB */
+.fab{position:fixed;bottom:22px;right:18px;left:18px;background:var(--accent);color:white;border:none;border-radius:var(--r);padding:15px;font-size:15px;font-weight:800;cursor:pointer;z-index:200;box-shadow:0 6px 28px rgba(155,90,60,.38);display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.02em;transition:transform .15s}
+.fab:active{transform:scale(.97)}
+/* MODALS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(44,34,25,.5);z-index:300;backdrop-filter:blur(3px);align-items:flex-end}
+.overlay.open{display:flex}
+.modal{background:var(--card);border:1.5px solid var(--border);border-radius:22px 22px 0 0;padding:18px 18px 36px;width:100%;max-height:92dvh;overflow-y:auto;box-shadow:0 -8px 40px rgba(100,70,40,.18)}
+.modal-handle{width:38px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.modal h2{font-size:17px;font-weight:800;color:var(--accent);margin-bottom:18px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:15px;padding:11px 13px;outline:none;transition:border-color .2s;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field select option{background:var(--card)}
+.field textarea{resize:none;height:65px}
+.field-row{display:flex;gap:10px}
+.field-row .field{flex:1}
+.modal-actions{display:flex;gap:10px;margin-top:18px}
+.btn-save{flex:1;background:var(--accent);color:white;border:none;border-radius:var(--rs);padding:14px;font-size:15px;font-weight:800;cursor:pointer}
+.btn-cancel{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);border-radius:var(--rs);padding:14px 18px;font-size:15px;font-weight:700;cursor:pointer}
+/* PHOTO */
+.photo-area{border:2px dashed var(--border);border-radius:var(--r);padding:14px;background:var(--bg);transition:border-color .2s}
+.photo-area:focus-within{border-color:var(--accent)}
+.photo-btns{display:flex;gap:8px}
+.photo-btn{flex:1;background:var(--card);border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 8px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:border-color .2s}
+.photo-btn:hover{border-color:var(--accent)}
+.photo-btn input{display:none}
+.photo-btn-icon{font-size:20px}
+.photo-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.prev-wrap{position:relative;width:72px;height:72px}
+.prev-img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1.5px solid var(--border);cursor:pointer}
+.prev-rm{position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:var(--accent);color:#fff;border:none;border-radius:50%;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:800;line-height:1}
+/* LIGHTBOX */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(20,12,6,.92);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.lightbox.open{display:flex}
+.lightbox img{max-width:94vw;max-height:80dvh;object-fit:contain;border-radius:var(--r)}
+.lb-nav{display:flex;align-items:center;gap:16px}
+.lb-btn{background:rgba(255,255,255,.15);border:none;color:white;width:44px;height:44px;border-radius:50%;font-size:20px;cursor:pointer}
+.lb-counter{color:rgba(255,255,255,.7);font-size:13px;font-weight:600}
+.lb-close{position:fixed;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;color:white;width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer}
+/* PDF BTN */
+.pdf-btn{width:100%;margin-top:20px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:14px;font-size:14px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color .2s;box-shadow:var(--sh)}
+.pdf-btn:hover{border-color:var(--accent)}
+/* SETTINGS */
+.fund-item{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);margin-bottom:7px}
+.fund-item-lbl{flex:1;font-size:13px;font-weight:700}
+.fund-item-type{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700}
+.type-own{background:rgba(107,140,107,.15);color:var(--green)}
+.type-credit{background:rgba(143,168,184,.2);color:#5a7d91}
+/* ZONE MANAGER */
+.zone-mgr-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);margin-bottom:7px}
+.zmgr-icon{font-size:20px;flex-shrink:0}
+.zmgr-name{flex:1;font-weight:700;font-size:14px}
+.zmgr-count{font-size:11px;color:var(--muted)}
+.icon-picker{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:var(--bg);border-radius:var(--rs);margin-bottom:10px}
+.icon-opt{font-size:22px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;transition:border-color .15s}
+.icon-opt.selected,.icon-opt:hover{border-color:var(--accent)}
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .big{font-size:44px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+/* PRINT */
+@media print{header,.fab,.overlay,.lightbox,.pdf-btn,.tabs{display:none!important}body{background:white;color:black}main{padding:0}.view{display:block!important}.expense-item{break-inside:avoid;border:1px solid #ddd;margin-bottom:6px}.filter-row{display:none}}
+/* SCROLL */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+@media(min-width:600px){main{max-width:600px;margin:0 auto;padding-bottom:100px}.fab{max-width:564px;left:50%;right:auto;transform:translateX(-50%)}.overlay{align-items:center}.modal{border-radius:22px;max-width:560px;margin:0 auto}}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+  <svg class="auth-arch" viewBox="0 0 56 64" fill="none">
+    <path d="M6 64V28C6 14.745 15.745 5 29 5C42.255 5 52 14.745 52 28V64" stroke="#8fa8b8" stroke-width="4" stroke-linecap="round"/>
+    <path d="M6 64V28C6 14.745 15.745 5 29 5" stroke="#9b5a3c" stroke-width="4" stroke-linecap="round"/>
+    <rect x="0" y="57" width="56" height="7" rx="3" fill="#9b5a3c"/>
+  </svg>
+  <h2>Учёт ремонта</h2>
+  <p>Введи своё имя,<br>чтобы данные сохранялись именно для тебя</p>
+  <div class="auth-card">
+    <input class="auth-input" id="authInput" type="text" placeholder="Например: Татев" maxlength="32" autocomplete="off"/>
+    <button class="auth-btn" id="authBtn">Войти →</button>
+    <div class="auth-hint">Данные хранятся в браузере на этом устройстве</div>
+    <div id="authPrev"></div>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboarding" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(44,34,25,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:28px 22px;max-width:420px;width:100%;box-shadow:0 8px 40px rgba(100,70,40,.2)">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:44px;margin-bottom:10px">🏠</div>
+      <div style="font-size:19px;font-weight:800;color:var(--accent);margin-bottom:6px">Добро пожаловать!</div>
+      <div style="font-size:14px;color:var(--muted);line-height:1.5">Твой личный учёт расходов на ремонт. Давай настроим за минуту.</div>
+    </div>
+    <div id="ob-steps">
+      <!-- Step 1 -->
+      <div class="ob-step" id="ob1">
+        <div style="font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Шаг 1 из 3</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:8px">💰 Задай общий бюджет</div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.5">Сколько планируешь потратить на ремонт? Можно изменить позже в настройках.</div>
+        <input type="number" id="obBudget" placeholder="Например: 2 000 000" inputmode="decimal"
+          style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:16px;padding:13px 14px;outline:none;font-family:inherit;margin-bottom:8px;transition:border-color .2s"/>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Можно пропустить и добавить позже</div>
+        <div style="display:flex;gap:10px">
+          <button onclick="obSkip(1)" style="flex:1;background:var(--bg);color:var(--muted);border:1.5px solid var(--border);border-radius:var(--rs);padding:13px;font-size:14px;font-weight:700;cursor:pointer">Пропустить</button>
+          <button onclick="obNext(1)" style="flex:2;background:var(--accent);color:white;border:none;border-radius:var(--rs);padding:13px;font-size:14px;font-weight:800;cursor:pointer">Далее →</button>
+        </div>
+      </div>
+      <!-- Step 2 -->
+      <div class="ob-step" id="ob2" style="display:none">
+        <div style="font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Шаг 2 из 3</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:8px">🏠 Твои зоны</div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.5">Стандартные зоны уже добавлены. Удали лишние или добавь свои в разделе Зоны → Управление.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px" id="obZonePreview"></div>
+        <button onclick="obNext(2)" style="width:100%;background:var(--accent);color:white;border:none;border-radius:var(--rs);padding:13px;font-size:14px;font-weight:800;cursor:pointer">Понятно, далее →</button>
+      </div>
+      <!-- Step 3 -->
+      <div class="ob-step" id="ob3" style="display:none">
+        <div style="font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Шаг 3 из 3</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:8px">📸 Как добавлять расходы</div>
+        <div style="font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">➕ <b>Вручную</b> — кнопка «Добавить расход» внизу</div>
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">📷 <b>Фото чека</b> — прикрепи фото к записи</div>
+          <div style="padding:10px 0">🤖 <b>Распознать</b> — сфотографируй список расходов, ИИ сам всё внесёт</div>
+        </div>
+        <button onclick="finishOnboarding()" style="width:100%;background:var(--accent);color:white;border:none;border-radius:var(--rs);padding:14px;font-size:15px;font-weight:800;cursor:pointer">Начать вести учёт 🚀</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<header>
+  <div class="header-top">
+    <div class="logo">
+      <svg width="30" height="34" viewBox="0 0 30 34" fill="none">
+        <path d="M3 34V16C3 8.268 8.268 3 16 3C23.732 3 29 8.268 29 16V34" stroke="#8fa8b8" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M3 34V16C3 8.268 8.268 3 16 3" stroke="#9b5a3c" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="0" y="31" width="30" height="3" rx="1.5" fill="#9b5a3c"/>
+      </svg>
+      <div><div class="logo-text">Ремонт</div><div class="logo-sub">учёт расходов</div></div>
+    </div>
+    <div class="header-right">
+      <div><div class="total-label">Потрачено</div><div class="total-amount" id="hTotal">0 ₽</div></div>
+      <div class="user-badge" id="userBadge" title="Выйти">👤 …</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab0" onclick="gotoView('dashboard',0)">📊 Сводка</button>
+    <button class="tab" id="tab1" onclick="gotoView('list',1)">📋 Расходы</button>
+    <button class="tab" id="tab2" onclick="gotoView('zones',2)">🏠 Зоны</button>
+    <button class="tab" id="tab3" onclick="gotoView('plan',3)">📅 План</button>
+    <button class="tab" id="tab4" onclick="openSettings()">⚙️</button>
+  </div>
+</header>
+
+<main>
+  <div id="v-dashboard" class="view active">
+    <div id="dBudget"></div>
+    <div id="dFunds"></div>
+    <div class="stats-strip" id="dStats"></div>
+    <div class="section-title">По категориям</div>
+    <div id="dCats"></div>
+    <button class="pdf-btn" onclick="exportPDF()">📄 Выгрузить отчёт в PDF</button>
+  </div>
+  <div id="v-list" class="view">
+    <div class="filter-row" id="lFilters"></div>
+    <div id="lList"></div>
+  </div>
+  <div id="v-zones" class="view">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="section-title" style="margin:0">Зоны</div>
+      <button class="pdf-btn" style="width:auto;padding:8px 14px;font-size:12px;margin:0" onclick="openZoneMgr()">⚙️ Управление</button>
+    </div>
+    <div class="zone-grid" id="zGrid"></div>
+    <div id="zDetail"></div>
+  </div>
+  <div id="v-plan" class="view">
+    <div id="pSummary"></div>
+    <div class="section-title">Плановые расходы</div>
+    <div id="pList"></div>
+    <button class="pdf-btn" style="margin-top:12px" onclick="openAddPlan()">+ Добавить плановый расход</button>
+  </div>
+</main>
+
+<button class="fab" id="mainFab" onclick="openAddModal()">
+  <span style="font-size:19px">+</span> Добавить расход
+</button>
+
+<!-- ADD / EDIT EXPENSE MODAL -->
+<div class="overlay" id="expOverlay">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 id="expModalTitle">Новый расход</h2>
+    <input type="hidden" id="eId"/>
+    <div class="field"><label>Описание</label><input type="text" id="eDesc" placeholder="Например: Плитка в ванную"/></div>
+    <div class="field-row">
+      <div class="field"><label>Сумма, ₽</label><input type="number" id="eAmt" placeholder="0" inputmode="decimal"/></div>
+      <div class="field"><label>Дата</label><input type="date" id="eDate"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Категория</label>
+        <select id="eCat">
+          <option value="Материалы">🧱 Материалы</option><option value="Работы">🔨 Работы</option>
+          <option value="Техника">🔌 Техника</option><option value="Мебель">🪑 Мебель</option>
+          <option value="Сантехника">🚿 Сантехника</option><option value="Освещение">💡 Освещение</option>
+          <option value="Декор">🎨 Декор</option><option value="Прочее">📦 Прочее</option>
+        </select>
+      </div>
+      <div class="field"><label>Зона</label><select id="eZone"></select></div>
+    </div>
+    <div class="field"><label>Магазин / подрядчик</label><input type="text" id="eStore" placeholder="Леруа, мастер Сергей..."/></div>
+    <div class="field">
+      <label>Фото (чек, записи, материалы)</label>
+      <div class="photo-area">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px">Можно добавить несколько фото</div>
+        <div class="photo-btns">
+          <label class="photo-btn"><input type="file" id="fCamera" accept="image/*" capture="environment" multiple/><span class="photo-btn-icon">📷</span><span>Камера</span></label>
+          <label class="photo-btn"><input type="file" id="fGallery" accept="image/*" multiple/><span class="photo-btn-icon">🖼️</span><span>Галерея</span></label>
+        </div>
+        <div class="photo-previews" id="ePreviews"></div>
+      </div>
+    </div>
+    <div class="field"><label>Заметка</label><textarea id="eNote" placeholder="Артикул, ссылка, количество..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="eDelBtn" style="color:var(--danger);border-color:var(--danger)" onclick="deleteCurrentExp()">🗑</button>
+      <button class="btn-cancel" onclick="closeExpModal()">Отмена</button>
+      <button class="btn-save" onclick="saveExp()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAN MODAL -->
+<div class="overlay" id="planOverlay">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 id="planModalTitle">Плановый расход</h2>
+    <input type="hidden" id="pId"/>
+    <div class="field"><label>Описание</label><input type="text" id="pDesc" placeholder="Что планируешь оплатить"/></div>
+    <div class="field-row">
+      <div class="field"><label>Сумма, ₽</label><input type="number" id="pAmt" placeholder="0" inputmode="decimal"/></div>
+      <div class="field"><label>Категория</label>
+        <select id="pCat">
+          <option value="Материалы">🧱 Материалы</option><option value="Работы">🔨 Работы</option>
+          <option value="Техника">🔌 Техника</option><option value="Мебель">🪑 Мебель</option>
+          <option value="Сантехника">🚿 Сантехника</option><option value="Освещение">💡 Освещение</option>
+          <option value="Декор">🎨 Декор</option><option value="Прочее">📦 Прочее</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Зона</label><select id="pZone"></select></div>
+    <div class="field"><label>Заметка</label><input type="text" id="pNote" placeholder="Поставщик, ссылка..."/></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePlanModal()">Отмена</button>
+      <button class="btn-save" onclick="savePlan()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal" onclick="event.stopPropagation()" style="max-height:90dvh">
+    <div class="modal-handle"></div>
+    <h2>⚙️ Бюджет и средства</h2>
+    <div class="field"><label>Общий бюджет на ремонт, ₽</label><input type="number" id="sBudget" placeholder="1 500 000" inputmode="decimal"/></div>
+    <div class="section-title">Вложенные средства</div>
+    <div id="fundsList"></div>
+    <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:13px;margin-top:4px">
+      <div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">+ Добавить источник</div>
+      <div class="field-row">
+        <div class="field" style="flex:2"><label>Название</label><input type="text" id="sNewLbl" placeholder="Накопления, Ипотека..."/></div>
+        <div class="field" style="flex:1"><label>Тип</label><select id="sNewType"><option value="own">💰 Свои</option><option value="credit">🏦 Кредит</option></select></div>
+      </div>
+      <div class="field"><label>Сумма, ₽</label><input type="number" id="sNewAmt" placeholder="0" inputmode="decimal"/></div>
+      <button class="btn-save" style="width:100%;padding:11px" onclick="addFund()">Добавить</button>
+    </div>
+
+    <div class="section-title" style="margin-top:20px">Данные</div>
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <button onclick="exportData()" style="flex:1;background:var(--card);border:1.5px solid var(--border);border-radius:var(--rs);padding:12px;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">💾 Сохранить данные</button>
+      <label style="flex:1;background:var(--card);border:1.5px solid var(--border);border-radius:var(--rs);padding:12px;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        📂 Загрузить данные<input type="file" accept=".json" id="importFile" style="display:none" onchange="importData(event)"/>
+      </label>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.5">Сохрани файл резервной копии — он поможет восстановить данные на новом устройстве</div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-cancel" onclick="closeSettings()">Закрыть</button>
+      <button class="btn-save" onclick="saveSettingsClose()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ZONE MANAGER MODAL -->
+<div class="overlay" id="zoneMgrOverlay">
+  <div class="modal" onclick="event.stopPropagation()" style="max-height:90dvh">
+    <div class="modal-handle"></div>
+    <h2>⚙️ Управление зонами</h2>
+    <div id="zoneMgrList"></div>
+    <div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:var(--r);padding:13px;margin-top:4px">
+      <div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">+ Новая зона</div>
+      <div id="iconPicker" class="icon-picker"></div>
+      <div class="field-row" style="margin-top:8px">
+        <div class="field" style="flex:3"><input type="text" id="newZoneName" placeholder="Название зоны" style="width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:15px;padding:11px 13px;outline:none;font-family:inherit"/></div>
+        <div class="field" style="flex:1;display:flex;align-items:flex-end"><button class="btn-save" style="width:100%;padding:11px;font-size:14px" onclick="addZone()">+</button></div>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-cancel" onclick="closeZoneMgr()">Закрыть</button>
+      <button class="btn-save" onclick="saveZoneMgr()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 id="confirmTitle" style="margin-bottom:8px"></h2>
+    <p id="confirmBody" style="font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5"></p>
+    <div class="modal-actions" style="margin-top:0">
+      <button class="btn-cancel" id="confirmNo">Отмена</button>
+      <button class="btn-save" id="confirmYes">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLB()">
+  <button class="lb-close" onclick="closeLB()">✕</button>
+  <img id="lbImg" src="" alt=""/>
+  <div class="lb-nav" onclick="event.stopPropagation()">
+    <button class="lb-btn" onclick="lbPrev()">‹</button>
+    <span class="lb-counter" id="lbCtr"></span>
+    <button class="lb-btn" onclick="lbNext()">›</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+var CATS = {
+  'Материалы':  {icon:'🧱', color:'#9b5a3c'},
+  'Работы':     {icon:'🔨', color:'#7a5c3e'},
+  'Техника':    {icon:'🔌', color:'#8fa8b8'},
+  'Мебель':     {icon:'🪑', color:'#c8963c'},
+  'Сантехника': {icon:'🚿', color:'#5a7d91'},
+  'Освещение':  {icon:'💡', color:'#c8963c'},
+  'Декор':      {icon:'🎨', color:'#a07060'},
+  'Прочее':     {icon:'📦', color:'#8a7a6a'}
+};
+
+var DEFAULT_ZONES = [
+  {id:'z1',name:'Детская',icon:'🧸'},
+  {id:'z2',name:'Спальня',icon:'🛏️'},
+  {id:'z3',name:'Кухня',icon:'🍳'},
+  {id:'z4',name:'Коридор',icon:'🚪'},
+  {id:'z5',name:'Ванная',icon:'🚿'},
+  {id:'z6',name:'Общие зоны',icon:'🏠'}
+];
+
+var ZONE_ICONS = ['🧸','🛏️','🍳','🚪','🚿','🏠','🛁','🖥️','📦','🏋️','🌿','🎵','📚','🎨','🪴','🐾','🔧','⚡','🏗️','🚗','🧺','🍽️','🛋️','🪑','🖼️'];
+
+var currentUser = '';
+var expenses = [];
+var settings = {budget:0, funds:[]};
+var planned = [];
+var zonesArr = [];
+var ZONES = {};
+var activeFilter = 'all';
+var activeZone = null;
+var currentPhotos = [];
+var editingExpId = null;
+var editingPlanId = null;
+var lbPhotos = [];
+var lbIdx = 0;
+var pickedIcon = '🏠';
+
+// ══════════════════════════════════════════════
+// STORAGE HELPERS
+// ══════════════════════════════════════════════
+function uk(k){ return currentUser ? currentUser+'_'+k : k; }
+
+function loadAll(){
+  expenses = JSON.parse(localStorage.getItem(uk('exp')) || '[]');
+  settings = JSON.parse(localStorage.getItem(uk('settings')) || '{"budget":0,"funds":[]}');
+  planned  = JSON.parse(localStorage.getItem(uk('planned')) || '[]');
+  zonesArr = JSON.parse(localStorage.getItem(uk('zones')) || 'null') || DEFAULT_ZONES.slice();
+  rebuildZones();
+}
+
+function saveExp(){ localStorage.setItem(uk('exp'), JSON.stringify(expenses)); }
+function saveSett(){ localStorage.setItem(uk('settings'), JSON.stringify(settings)); }
+function savePlan(){ localStorage.setItem(uk('planned'), JSON.stringify(planned)); }
+function saveZones(){ localStorage.setItem(uk('zones'), JSON.stringify(zonesArr)); }
+
+function rebuildZones(){
+  ZONES = {};
+  zonesArr.forEach(function(z){ ZONES[z.name] = z.icon; });
+}
+
+function buildZoneSelect(selId, val){
+  var sel = document.getElementById(selId);
+  if(!sel) return;
+  sel.innerHTML = '';
+  zonesArr.forEach(function(z){
+    var opt = document.createElement('option');
+    opt.value = z.name;
+    opt.textContent = z.icon+' '+z.name;
+    if(z.name === val) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function buildAllZoneSelects(){
+  buildZoneSelect('eZone','Общие зоны');
+  buildZoneSelect('pZone','Общие зоны');
+}
+
+// ══════════════════════════════════════════════
+// SEED DATA (Татев)
+// ══════════════════════════════════════════════
+function seedIfNeeded(){
+  // No demo data — clean start for each user
+}
+
+// ══════════════════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════════════════
+function showOnboarding(){
+  // Populate zone preview
+  var prev = document.getElementById('obZonePreview');
+  if(prev){
+    prev.innerHTML = zonesArr.map(function(z){
+      return '<div style="padding:6px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:20px;font-size:13px;font-weight:700">'+z.icon+' '+z.name+'</div>';
+    }).join('');
+  }
+  var el = document.getElementById('onboarding');
+  el.style.display = 'flex';
+}
+
+function obNext(step){
+  if(step === 1){
+    var budget = parseFloat(document.getElementById('obBudget').value) || 0;
+    if(budget > 0){ settings.budget = budget; saveSett(); }
+  }
+  document.getElementById('ob'+step).style.display = 'none';
+  document.getElementById('ob'+(step+1)).style.display = 'block';
+}
+
+function obSkip(step){
+  document.getElementById('ob'+step).style.display = 'none';
+  document.getElementById('ob'+(step+1)).style.display = 'block';
+}
+
+function finishOnboarding(){
+  document.getElementById('onboarding').style.display = 'none';
+  localStorage.setItem(uk('onboarded'), '1');
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════
+// EXPORT / IMPORT
+// ══════════════════════════════════════════════
+function exportData(){
+  var data = {
+    version: 1,
+    user: currentUser,
+    exported: new Date().toISOString(),
+    expenses: expenses,
+    planned: planned,
+    settings: settings,
+    zones: zonesArr
+  };
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var dateStr = new Date().toLocaleDateString('ru-RU').replace(/\./g,'-');
+  a.href = url;
+  a.download = 'remont_backup_'+dateStr+'.json';
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+}
+
+function importData(e){
+  var file = e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var data = JSON.parse(ev.target.result);
+      if(!data.expenses) throw new Error('Неверный формат файла');
+      confirm2('Загрузить данные из резервной копии?\nТекущие данные будут заменены.', function(){
+        if(data.expenses) { expenses = data.expenses; saveExp(); }
+        if(data.planned)  { planned  = data.planned;  savePlan(); }
+        if(data.settings) { settings = data.settings; saveSett(); }
+        if(data.zones)    { zonesArr = data.zones; saveZones(); rebuildZones(); buildAllZoneSelects(); }
+        closeSettings();
+        refreshView();
+        flashFab('✅ Данные восстановлены', 'var(--green)');
+      });
+    } catch(err){
+      alert('Ошибка при загрузке файла: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+function initApp(){
+  var saved = localStorage.getItem('remont_user') || '';
+  if(saved){
+    loginAs(saved);
+  } else {
+    // Show auth screen, populate known users
+    var screen = document.getElementById('authScreen');
+    screen.style.display = 'flex';
+    renderKnownUsers();
+    document.getElementById('authBtn').onclick = function(){
+      var n = document.getElementById('authInput').value.trim();
+      if(!n){ document.getElementById('authInput').style.borderColor='var(--danger)'; return; }
+      loginAs(n);
+    };
+    document.getElementById('authInput').onkeydown = function(e){
+      if(e.key==='Enter'){ document.getElementById('authBtn').click(); }
+    };
+  }
+}
+
+function renderKnownUsers(){
+  var known = JSON.parse(localStorage.getItem('remont_users')||'[]');
+  var prev = document.getElementById('authPrev');
+  if(known.length === 0){ prev.innerHTML=''; return; }
+  var html = '<div class="auth-prev"><div class="auth-prev-lbl">Ранее входили</div>';
+  known.forEach(function(u){
+    html += '<div class="auth-user-row" data-u="'+u+'"><span>👤 '+u+'</span><span style="color:var(--accent)">→</span></div>';
+  });
+  html += '</div>';
+  prev.innerHTML = html;
+  prev.querySelectorAll('.auth-user-row').forEach(function(el){
+    el.onclick = function(){ loginAs(el.getAttribute('data-u')); };
+  });
+}
+
+function loginAs(name){
+  currentUser = name;
+  localStorage.setItem('remont_user', name);
+  var known = JSON.parse(localStorage.getItem('remont_users')||'[]');
+  if(known.indexOf(name) === -1){ known.push(name); localStorage.setItem('remont_users', JSON.stringify(known)); }
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('userBadge').textContent = '👤 '+name;
+  document.getElementById('userBadge').onclick = function(){ logout(); };
+  loadAll();
+  seedIfNeeded();
+  loadAll();
+  buildAllZoneSelects();
+  var isNew = !localStorage.getItem(uk('onboarded')) && expenses.length === 0;
+  if(isNew){ showOnboarding(); } else { renderDashboard(); }
+}
+
+function logout(){
+  confirm2('Выйти из профиля "'+currentUser+'"?\nДанные сохранятся.', function(){
+    localStorage.removeItem('remont_user');
+    location.reload();
+  });
+}
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+var currentView = 'dashboard';
+
+function gotoView(name, tabIdx){
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('v-'+name).classList.add('active');
+  document.getElementById('tab'+tabIdx).classList.add('active');
+  currentView = name;
+  if(name==='dashboard') renderDashboard();
+  else if(name==='list') renderList();
+  else if(name==='zones') renderZones();
+  else if(name==='plan') renderPlanView();
+}
+
+function refreshView(){
+  if(currentView==='dashboard') renderDashboard();
+  else if(currentView==='list') renderList();
+  else if(currentView==='zones') renderZones();
+  else if(currentView==='plan') renderPlanView();
+  renderHeader();
+}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+function fmt(n){ return Number(n).toLocaleString('ru-RU')+' ₽'; }
+function fmtS(n){
+  if(n>=1000000) return (n/1000000).toFixed(1).replace('.0','')+'млн';
+  if(n>=1000) return Math.round(n/1000)+'тыс';
+  return String(n);
+}
+function totalFact(){ return expenses.reduce(function(s,e){ return s+Number(e.amount); },0); }
+function totalPlan(){ return planned.reduce(function(s,p){ return s+Number(p.amount); },0); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+
+function catInfo(cat){ return CATS[cat] || {icon:'📦', color:'#8a7a6a'}; }
+
+function renderHeader(){
+  document.getElementById('hTotal').textContent = fmtS(totalFact())+' ₽';
+}
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function renderDashboard(){
+  renderHeader();
+  var total = totalFact();
+  var budget = Number(settings.budget)||0;
+  var planTotal = totalPlan();
+  var ownF = 0, credF = 0;
+  settings.funds.forEach(function(f){ if(f.type==='own') ownF+=Number(f.amount); else credF+=Number(f.amount); });
+
+  // Budget block
+  var budgetHtml;
+  if(budget > 0){
+    var rem = budget - total;
+    var pct = Math.min(100, Math.round(total/budget*100));
+    var over = rem < 0;
+    budgetHtml = '<div class="card budget-block" style="margin-bottom:10px">'
+      +'<div class="budget-row"><span class="budget-lbl">Бюджет</span><span class="budget-val">'+fmt(budget)+'</span></div>'
+      +'<div class="budget-row"><span class="budget-lbl">Потрачено</span><span class="budget-val" style="color:var(--accent)">'+fmt(total)+'</span></div>'
+      +(planTotal>0?'<div class="budget-row"><span class="budget-lbl" style="color:var(--accent2)">📅 В плане ещё</span><span class="budget-val" style="color:var(--accent2)">'+fmt(planTotal)+'</span></div>':'')
+      +'<div class="budget-track"><div class="budget-fill'+(over?' over':'')+'" style="width:'+pct+'%"></div></div>'
+      +'<div class="budget-row"><span class="budget-lbl">'+(over?'⚠️ Перерасход':'Осталось')+'</span>'
+      +'<span class="budget-val" style="color:'+(over?'var(--danger)':'var(--green)')+'">'+fmt(Math.abs(rem))+'</span></div>'
+      +'</div>';
+  } else {
+    budgetHtml = '<div class="card budget-block budget-empty" onclick="openSettings()">🎯 Задать общий бюджет →</div>';
+  }
+  document.getElementById('dBudget').innerHTML = budgetHtml;
+
+  // Funds chips
+  var fundsHtml = '';
+  if(settings.funds.length > 0){
+    fundsHtml = '<div class="funds-row">'
+      +(ownF>0?'<div class="fund-chip own">💰 Свои: '+fmt(ownF)+'</div>':'')
+      +(credF>0?'<div class="fund-chip credit">🏦 Кредит: '+fmt(credF)+'</div>':'')
+      +'<div class="fund-chip totf">Итого средств: '+fmt(ownF+credF)+'</div>'
+      +'</div>';
+  }
+  document.getElementById('dFunds').innerHTML = fundsHtml;
+
+  // Stats
+  var thisMonth = 0;
+  var now = new Date();
+  expenses.forEach(function(e){
+    var d = new Date(e.date);
+    if(d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear()) thisMonth+=Number(e.amount);
+  });
+  document.getElementById('dStats').innerHTML =
+    '<div class="card stat-card"><div class="stat-value" style="color:var(--accent)">'+fmtS(total)+'</div><div class="stat-label">₽ всего</div></div>'
+    +'<div class="card stat-card"><div class="stat-value" style="color:var(--wood)">'+expenses.length+'</div><div class="stat-label">записей</div></div>'
+    +'<div class="card stat-card"><div class="stat-value" style="color:var(--accent2)">'+fmtS(thisMonth)+'</div><div class="stat-label">в этом мес.</div></div>';
+
+  // Cat bars
+  var catTotals = {};
+  expenses.forEach(function(e){ catTotals[e.cat]=(catTotals[e.cat]||0)+Number(e.amount); });
+  var cats = Object.keys(catTotals).sort(function(a,b){ return catTotals[b]-catTotals[a]; });
+  var html = '';
+  cats.forEach(function(cat){
+    var sum = catTotals[cat];
+    var pct = total>0?Math.round(sum/total*100):0;
+    var ci = catInfo(cat);
+    var cnt = expenses.filter(function(e){ return e.cat===cat; }).length;
+    html += '<div class="card cat-bar" onclick="filterByCat(\''+cat+'\')"><div class="cat-bar-top">'
+      +'<div class="cat-name"><div class="cat-icon" style="background:'+ci.color+'20">'+ci.icon+'</div><span>'+cat+'</span></div>'
+      +'<div class="cat-amount">'+fmt(sum)+'</div></div>'
+      +'<div class="prog-track"><div class="prog-fill" style="width:'+pct+'%;background:'+ci.color+'"></div></div>'
+      +'<div class="cat-count">'+cnt+' записей · '+pct+'%</div></div>';
+  });
+  document.getElementById('dCats').innerHTML = html || '<div class="empty-state"><div class="big">🏗️</div><p>Добавь первый расход</p></div>';
+}
+
+function filterByCat(cat){
+  activeFilter = cat;
+  gotoView('list',1);
+}
+
+// ══════════════════════════════════════════════
+// EXPENSE LIST
+// ══════════════════════════════════════════════
+function renderList(){
+  var cats = [];
+  expenses.forEach(function(e){ if(cats.indexOf(e.cat)===-1) cats.push(e.cat); });
+  var chips = '<button class="filter-chip'+(activeFilter==='all'?' active':'')+'" onclick="setFilter(\'all\')">Все</button>';
+  cats.forEach(function(c){
+    var ci = catInfo(c);
+    chips += '<button class="filter-chip'+(activeFilter===c?' active':'')+'" onclick="setFilter(\''+c+'\')">'+ci.icon+' '+c+'</button>';
+  });
+  document.getElementById('lFilters').innerHTML = chips;
+
+  var list = activeFilter==='all' ? expenses : expenses.filter(function(e){ return e.cat===activeFilter; });
+  list = list.slice().sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+
+  if(!list.length){ document.getElementById('lList').innerHTML='<div class="empty-state"><div class="big">🗒️</div><p>Расходов нет</p></div>'; return; }
+
+  var html='';
+  list.forEach(function(e){ html += expItemHtml(e, true); });
+  document.getElementById('lList').innerHTML = html;
+}
+
+function setFilter(f){ activeFilter=f; renderList(); }
+
+function expItemHtml(e, withDel){
+  var ci = catInfo(e.cat);
+  var d = e.date ? new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'}) : '';
+  var photos = e.photos||[];
+  var thumb = photos.length ? '<img class="exp-thumb" src="'+photos[0]+'" onclick="openLB(\''+e.id+'\',0)"/>' : '';
+  return '<div class="card expense-item">'
+    +'<div class="exp-icon" style="background:'+ci.color+'18">'+ci.icon+'</div>'
+    +'<div class="exp-body"><div class="exp-desc">'+((e.desc)||'—')+'</div>'
+    +'<div class="exp-meta"><span class="tag tag-cat">'+e.cat+'</span><span class="tag tag-zone">'+(ZONES[e.zone]||'')+'  '+e.zone+'</span>'
+    +(e.store?'<span class="exp-date">'+e.store+'</span>':'')
+    +(d?'<span class="exp-date">· '+d+'</span>':'')+'</div>'
+    +(e.note?'<div class="exp-date" style="margin-top:4px">'+e.note+'</div>':'')
+    +'</div>'+thumb
+    +'<div class="exp-right"><div class="exp-amount" style="color:'+ci.color+'">'+fmt(e.amount)+'</div>'
+    +'<div style="display:flex;gap:2px"><button class="edit-btn" onclick="openEditExp(\''+e.id+'\')">✏️</button>'
+    +(withDel?'<button class="del-btn" onclick="delExp(\''+e.id+'\')">✕</button>':'')
+    +'</div></div></div>';
+}
+
+// ══════════════════════════════════════════════
+// ZONES
+// ══════════════════════════════════════════════
+function renderZones(){
+  var zt={}, zc={};
+  expenses.forEach(function(e){ zt[e.zone]=(zt[e.zone]||0)+Number(e.amount); zc[e.zone]=(zc[e.zone]||0)+1; });
+
+  var grid='';
+  zonesArr.forEach(function(z){
+    grid += '<div class="card zone-card'+(activeZone===z.name?' selected':'')+'" onclick="selectZone(\''+z.name+'\')">'
+      +'<div class="zone-icon">'+z.icon+'</div><div class="zone-name">'+z.name+'</div>'
+      +'<div class="zone-amount">'+(zt[z.name]?fmt(zt[z.name]):'—')+'</div>'
+      +'<div class="zone-count">'+(zc[z.name]||0)+' записей</div></div>';
+  });
+  document.getElementById('zGrid').innerHTML = grid;
+
+  if(activeZone){
+    var items = expenses.filter(function(e){ return e.zone===activeZone; }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+    var zIcon = ZONES[activeZone]||'📍';
+    var det = '<div class="section-title">'+zIcon+' '+activeZone+'</div>';
+    if(items.length){ items.forEach(function(e){ det+=expItemHtml(e,true); }); }
+    else { det+='<div class="empty-state" style="padding:28px 0"><p>В этой зоне расходов нет</p></div>'; }
+    document.getElementById('zDetail').innerHTML = det;
+  } else {
+    document.getElementById('zDetail').innerHTML='';
+  }
+}
+
+function selectZone(z){ activeZone = activeZone===z ? null : z; renderZones(); }
+
+// ══════════════════════════════════════════════
+// PLAN VIEW
+// ══════════════════════════════════════════════
+function renderPlanView(){
+  var pt = totalPlan();
+  var ft = totalFact();
+  document.getElementById('pSummary').innerHTML =
+    '<div class="plan-summary">'
+    +'<div class="plan-row"><span class="plan-lbl">📅 Запланировано к оплате</span><span class="plan-val" style="color:var(--accent2)">'+fmt(pt)+'</span></div>'
+    +'<div class="plan-row"><span class="plan-lbl">✅ Уже потрачено (факт)</span><span class="plan-val" style="color:var(--accent)">'+fmt(ft)+'</span></div>'
+    +'<div style="height:1px;background:var(--border);margin:8px 0"></div>'
+    +'<div class="plan-row"><span class="plan-lbl" style="font-weight:800">Итого с планом</span><span class="plan-val" style="font-size:17px">'+fmt(pt+ft)+'</span></div>'
+    +'</div>';
+
+  if(!planned.length){ document.getElementById('pList').innerHTML='<div class="empty-state"><div class="big">📅</div><p>Плановых расходов нет</p></div>'; return; }
+
+  var html='';
+  planned.forEach(function(p){
+    var ci = catInfo(p.cat);
+    html += '<div class="card expense-item plan-item">'
+      +'<div class="exp-icon" style="background:'+ci.color+'18">'+ci.icon+'</div>'
+      +'<div class="exp-body"><div class="exp-desc">'+p.desc+'</div>'
+      +'<div class="exp-meta"><span class="tag tag-cat">'+p.cat+'</span><span class="tag tag-zone">'+(ZONES[p.zone]||'')+'  '+p.zone+'</span><span class="plan-badge">ПЛАН</span></div>'
+      +(p.note?'<div class="exp-date" style="margin-top:4px">'+p.note+'</div>':'')
+      +'</div>'
+      +'<div class="exp-right"><div class="exp-amount" style="color:var(--accent2)">'+fmt(p.amount)+'</div>'
+      +'<button class="fact-btn" onclick="convertToFact(\''+p.id+'\')">→ Факт</button>'
+      +'<div style="display:flex;gap:2px">'
+      +'<button class="edit-btn" onclick="openEditPlan(\''+p.id+'\')">✏️</button>'
+      +'<button class="del-btn" onclick="delPlan(\''+p.id+'\')">✕</button>'
+      +'</div></div></div>';
+  });
+  document.getElementById('pList').innerHTML = html;
+}
+
+function convertToFact(id){
+  var p = planned.filter(function(x){ return x.id===id; })[0];
+  if(!p) return;
+  confirm2('Перенести в факт?\n"'+p.desc+'" — '+fmt(p.amount), function(){
+    expenses.push({id:Date.now().toString(),desc:p.desc,amount:p.amount,cat:p.cat,zone:p.zone,store:'',date:today(),note:p.note||'',photos:[]});
+    planned = planned.filter(function(x){ return x.id!==id; });
+    saveExp(); savePlan(); refreshView();
+    flashFab('✅ Переведено в факт', 'var(--green)');
+  });
+}
+
+function delPlan(id){
+  confirm2('Удалить плановый расход?', function(){
+    planned = planned.filter(function(x){ return x.id!==id; });
+    savePlan(); renderPlanView();
+  });
+}
+
+// ══════════════════════════════════════════════
+// ADD/EDIT EXPENSE MODAL
+// ══════════════════════════════════════════════
+function openAddModal(){
+  editingExpId = null;
+  document.getElementById('expModalTitle').textContent = 'Новый расход';
+  document.getElementById('eId').value = '';
+  document.getElementById('eDesc').value = '';
+  document.getElementById('eAmt').value = '';
+  document.getElementById('eDate').value = today();
+  document.getElementById('eCat').value = 'Материалы';
+  document.getElementById('eStore').value = '';
+  document.getElementById('eNote').value = '';
+  document.getElementById('eDelBtn').style.display = 'none';
+  currentPhotos = [];
+  document.getElementById('ePreviews').innerHTML = '';
+  buildZoneSelect('eZone','Общие зоны');
+  openOverlay('expOverlay');
+  setTimeout(function(){ document.getElementById('eAmt').focus(); }, 200);
+}
+
+function openEditExp(id){
+  var e = expenses.filter(function(x){ return x.id===id; })[0];
+  if(!e) return;
+  editingExpId = id;
+  document.getElementById('expModalTitle').textContent = 'Редактировать';
+  document.getElementById('eId').value = id;
+  document.getElementById('eDesc').value = e.desc||'';
+  document.getElementById('eAmt').value = e.amount||'';
+  document.getElementById('eDate').value = e.date||'';
+  document.getElementById('eCat').value = e.cat||'Прочее';
+  document.getElementById('eStore').value = e.store||'';
+  document.getElementById('eNote').value = e.note||'';
+  document.getElementById('eDelBtn').style.display = '';
+  currentPhotos = (e.photos||[]).slice();
+  buildZoneSelect('eZone', e.zone||'Общие зоны');
+  renderPhotoPreviews();
+  openOverlay('expOverlay');
+}
+
+function closeExpModal(){ closeOverlay('expOverlay'); }
+
+function saveExp2(){
+  var amt = parseFloat(document.getElementById('eAmt').value);
+  if(!amt||amt<=0){ document.getElementById('eAmt').style.borderColor='var(--danger)'; setTimeout(function(){ document.getElementById('eAmt').style.borderColor=''; },1500); return; }
+  var obj = {
+    id: editingExpId || (Date.now().toString()+'_'+Math.random().toString(36).slice(2)),
+    desc: document.getElementById('eDesc').value.trim() || document.getElementById('eCat').value,
+    amount: amt,
+    cat: document.getElementById('eCat').value,
+    zone: document.getElementById('eZone').value,
+    store: document.getElementById('eStore').value.trim(),
+    date: document.getElementById('eDate').value,
+    note: document.getElementById('eNote').value.trim(),
+    photos: currentPhotos.slice()
+  };
+  if(editingExpId){
+    var idx = expenses.findIndex ? expenses.findIndex(function(x){ return x.id===editingExpId; }) : -1;
+    if(idx===-1){ for(var i=0;i<expenses.length;i++){ if(expenses[i].id===editingExpId){idx=i;break;} } }
+    if(idx!==-1) expenses[idx] = obj;
+  } else {
+    expenses.push(obj);
+  }
+  saveExp(); closeExpModal(); refreshView();
+}
+
+// Wire save button properly
+document.querySelector('.btn-save[onclick="saveExp()"]') && (function(){
+  document.querySelector('.btn-save[onclick="saveExp()"]').onclick = saveExp2;
+})();
+
+function deleteCurrentExp(){
+  if(!editingExpId) return;
+  var id = editingExpId;
+  confirm2('Удалить этот расход?', function(){
+    expenses = expenses.filter(function(e){ return e.id!==id; });
+    saveExp(); closeExpModal(); refreshView();
+  });
+}
+
+function delExp(id){
+  confirm2('Удалить расход?', function(){
+    expenses = expenses.filter(function(e){ return e.id!==id; });
+    saveExp(); refreshView();
+  });
+}
+
+// ══════════════════════════════════════════════
+// PHOTO
+// ══════════════════════════════════════════════
+document.getElementById('fCamera').onchange = function(e){ handlePhotoInput(e); };
+document.getElementById('fGallery').onchange = function(e){ handlePhotoInput(e); };
+
+function handlePhotoInput(e){
+  var files = Array.prototype.slice.call(e.target.files);
+  files.forEach(function(file){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      currentPhotos.push(ev.target.result);
+      renderPhotoPreviews();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value='';
+}
+
+function renderPhotoPreviews(){
+  var html='';
+  currentPhotos.forEach(function(src, i){
+    html += '<div class="prev-wrap"><img class="prev-img" src="'+src+'" onclick="openLBDirect(currentPhotos,'+i+')"/>'
+      +'<button class="prev-rm" onclick="removePhoto('+i+')">✕</button></div>';
+  });
+  document.getElementById('ePreviews').innerHTML = html;
+}
+
+function removePhoto(i){ currentPhotos.splice(i,1); renderPhotoPreviews(); }
+
+// ══════════════════════════════════════════════
+// PLAN MODAL
+// ══════════════════════════════════════════════
+function openAddPlan(){
+  editingPlanId = null;
+  document.getElementById('planModalTitle').textContent = 'Плановый расход';
+  document.getElementById('pId').value='';
+  document.getElementById('pDesc').value='';
+  document.getElementById('pAmt').value='';
+  document.getElementById('pNote').value='';
+  document.getElementById('pCat').value='Материалы';
+  buildZoneSelect('pZone','Общие зоны');
+  openOverlay('planOverlay');
+}
+
+function openEditPlan(id){
+  var p = planned.filter(function(x){ return x.id===id; })[0];
+  if(!p) return;
+  editingPlanId = id;
+  document.getElementById('planModalTitle').textContent = 'Редактировать план';
+  document.getElementById('pId').value=id;
+  document.getElementById('pDesc').value=p.desc||'';
+  document.getElementById('pAmt').value=p.amount||'';
+  document.getElementById('pNote').value=p.note||'';
+  document.getElementById('pCat').value=p.cat||'Прочее';
+  buildZoneSelect('pZone', p.zone||'Общие зоны');
+  openOverlay('planOverlay');
+}
+
+function closePlanModal(){ closeOverlay('planOverlay'); }
+
+function savePlan2(){
+  var amt = parseFloat(document.getElementById('pAmt').value);
+  var desc = document.getElementById('pDesc').value.trim();
+  if(!amt||!desc){
+    if(!desc) document.getElementById('pDesc').style.borderColor='var(--danger)';
+    if(!amt) document.getElementById('pAmt').style.borderColor='var(--danger)';
+    setTimeout(function(){ document.getElementById('pDesc').style.borderColor=''; document.getElementById('pAmt').style.borderColor=''; },1500);
+    return;
+  }
+  var obj={id:editingPlanId||(Date.now().toString()),desc:desc,amount:amt,cat:document.getElementById('pCat').value,zone:document.getElementById('pZone').value,note:document.getElementById('pNote').value.trim()};
+  if(editingPlanId){
+    var idx=-1;
+    for(var i=0;i<planned.length;i++){ if(planned[i].id===editingPlanId){idx=i;break;} }
+    if(idx!==-1) planned[idx]=obj;
+  } else { planned.push(obj); }
+  savePlan(); closePlanModal(); renderPlanView(); renderDashboard();
+}
+
+// ══════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════
+function openSettings(){
+  document.getElementById('sBudget').value = settings.budget||'';
+  renderFundsList();
+  openOverlay('settingsOverlay');
+}
+function closeSettings(){ closeOverlay('settingsOverlay'); }
+
+function renderFundsList(){
+  var zc={}; // count expenses per fund source - not needed here
+  var html='';
+  settings.funds.forEach(function(f,i){
+    html += '<div class="fund-item"><span class="fund-item-lbl">'+f.label+'</span>'
+      +'<span class="fund-item-type '+(f.type==='own'?'type-own':'type-credit')+'">'+(f.type==='own'?'💰 Свои':'🏦 Кредит')+'</span>'
+      +'<span style="font-size:13px;font-weight:800;color:var(--accent)">'+fmt(f.amount)+'</span>'
+      +'<button class="del-btn" onclick="removeFund('+i+')" style="font-size:13px">✕</button></div>';
+  });
+  document.getElementById('fundsList').innerHTML = html || '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">Источников нет</div>';
+}
+
+function addFund(){
+  var lbl=document.getElementById('sNewLbl').value.trim();
+  var amt=parseFloat(document.getElementById('sNewAmt').value);
+  if(!lbl||!amt) return;
+  settings.funds.push({id:Date.now().toString(),label:lbl,amount:amt,type:document.getElementById('sNewType').value});
+  document.getElementById('sNewLbl').value=''; document.getElementById('sNewAmt').value='';
+  renderFundsList();
+}
+
+function removeFund(i){ settings.funds.splice(i,1); renderFundsList(); }
+
+function saveSettingsClose(){
+  settings.budget = parseFloat(document.getElementById('sBudget').value)||0;
+  saveSett(); closeSettings(); renderDashboard();
+}
+
+// ══════════════════════════════════════════════
+// ZONE MANAGER
+// ══════════════════════════════════════════════
+function openZoneMgr(){
+  document.getElementById('iconPicker').innerHTML = ZONE_ICONS.map(function(ic){
+    return '<span class="icon-opt'+(ic===pickedIcon?' selected':'')+'" onclick="pickIcon(\''+ic+'\')">'+ic+'</span>';
+  }).join('');
+  renderZoneMgrList();
+  openOverlay('zoneMgrOverlay');
+}
+function closeZoneMgr(){ closeOverlay('zoneMgrOverlay'); }
+
+function pickIcon(ic){
+  pickedIcon=ic;
+  document.querySelectorAll('#iconPicker .icon-opt').forEach(function(el){ el.classList.toggle('selected', el.textContent===ic); });
+}
+
+function renderZoneMgrList(){
+  var zc={};
+  expenses.forEach(function(e){ zc[e.zone]=(zc[e.zone]||0)+1; });
+  var html='';
+  zonesArr.forEach(function(z,i){
+    html += '<div class="zone-mgr-item"><span class="zmgr-icon">'+z.icon+'</span><span class="zmgr-name">'+z.name+'</span>'
+      +'<span class="zmgr-count">'+(zc[z.name]||0)+' зап.</span>'
+      +((!zc[z.name])?'<button class="del-btn" onclick="removeZone('+i+')" style="font-size:13px">✕</button>':'')
+      +'</div>';
+  });
+  document.getElementById('zoneMgrList').innerHTML = html;
+}
+
+function addZone(){
+  var name=document.getElementById('newZoneName').value.trim();
+  if(!name) return;
+  if(zonesArr.filter(function(z){ return z.name===name; }).length) return;
+  zonesArr.push({id:'z'+Date.now(),name:name,icon:pickedIcon});
+  document.getElementById('newZoneName').value='';
+  rebuildZones(); buildAllZoneSelects(); renderZoneMgrList();
+}
+
+function removeZone(i){ zonesArr.splice(i,1); rebuildZones(); buildAllZoneSelects(); renderZoneMgrList(); }
+
+function saveZoneMgr(){ saveZones(); closeZoneMgr(); renderZones(); }
+
+// ══════════════════════════════════════════════
+// PDF EXPORT — string concatenation only, no template literals
+// ══════════════════════════════════════════════
+function exportPDF(){
+  var pw = window.open('','_blank');
+  if(!pw){ alert('Разреши всплывающие окна в настройках браузера.'); return; }
+  var total = totalFact();
+  var budget = Number(settings.budget)||0;
+  var pt = totalPlan();
+  var ownF=0, credF=0;
+  settings.funds.forEach(function(f){ if(f.type==='own') ownF+=Number(f.amount); else credF+=Number(f.amount); });
+  var rem = budget>0 ? budget-total : null;
+  var nowStr = new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+
+  var catTotals={};
+  expenses.forEach(function(e){ catTotals[e.cat]=(catTotals[e.cat]||0)+Number(e.amount); });
+  var catKeys = Object.keys(catTotals).sort(function(a,b){ return catTotals[b]-catTotals[a]; });
+
+  var catRows='';
+  catKeys.forEach(function(cat){
+    var s=catTotals[cat]; var pct=total>0?Math.round(s/total*100):0;
+    var icon=(CATS[cat]&&CATS[cat].icon)||'📦';
+    catRows+='<tr><td>'+icon+' '+cat+'</td><td class="r">'+fmt(s)+'</td><td class="r muted">'+pct+'%</td></tr>';
+  });
+
+  var expRows='';
+  var sorted=expenses.slice().sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+  sorted.forEach(function(e){
+    var d=e.date?new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'}):'';
+    expRows+='<tr><td>'+(e.desc||'—')+'</td><td>'+e.cat+'</td><td>'+e.zone+'</td><td>'+(e.store||'—')+'</td><td>'+d+'</td><td class="r">'+fmt(e.amount)+'</td></tr>';
+  });
+
+  var planRows='';
+  planned.forEach(function(p){
+    planRows+='<tr><td>'+p.desc+'</td><td>'+p.cat+'</td><td>'+p.zone+'</td><td>'+(p.note||'—')+'</td><td class="r" style="color:#5a7d91">'+fmt(p.amount)+'</td></tr>';
+  });
+
+  var fundsRows='';
+  settings.funds.forEach(function(f){
+    fundsRows+='<tr><td>'+f.label+'</td><td>'+(f.type==='own'?'Свои':'Кредит')+'</td><td class="r">'+fmt(f.amount)+'</td></tr>';
+  });
+
+  var css='*{box-sizing:border-box;margin:0;padding:0}'
+    +'body{font-family:Arial,sans-serif;font-size:13px;color:#2c2219;padding:28px 32px}'
+    +'h1{color:#9b5a3c;font-size:21px;margin-bottom:3px}'
+    +'.sub{color:#8a7a6a;font-size:12px;margin-bottom:22px}'
+    +'h2{color:#7a5c3e;font-size:14px;margin:20px 0 8px;border-bottom:2px solid #e8e0d0;padding-bottom:4px}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:4px}'
+    +'th{background:#f0ebe0;text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:#8a7a6a}'
+    +'td{padding:6px 8px;border-bottom:1px solid #f5f0e8;font-size:12px}'
+    +'.r{text-align:right;font-weight:700}'
+    +'.muted{color:#8a7a6a;font-weight:400}'
+    +'tfoot td{background:#f0ebe0;font-weight:800}'
+    +'.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}'
+    +'.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px}'
+    +'.sc{background:#faf6ef;border:1px solid #d4c9b5;border-radius:10px;padding:11px}'
+    +'.sv{font-size:18px;font-weight:800;color:#9b5a3c}'
+    +'.sl{font-size:10px;color:#8a7a6a;text-transform:uppercase;margin-top:3px}'
+    +'.green{color:#6b8c6b}.blue{color:#5a7d91}.red{color:#c04040}'
+    +'.pbtn{position:fixed;top:14px;right:16px;background:#9b5a3c;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer}'
+    +'@media print{.pbtn{display:none}}';
+
+  var summGrid='<div class="g3">'
+    +'<div class="sc"><div class="sv">'+fmt(total)+'</div><div class="sl">Факт потрачено</div></div>'
+    +(pt>0?'<div class="sc"><div class="sv blue">'+fmt(pt)+'</div><div class="sl">В плане</div></div>'
+      +'<div class="sc"><div class="sv">'+fmt(total+pt)+'</div><div class="sl">Итого с планом</div></div>':'')
+    +'</div>';
+
+  var budgBlock='';
+  if(budget>0){
+    var rc=(rem!==null&&rem<0)?'red':'green';
+    var rl=(rem!==null&&rem<0)?'Перерасход':'Остаток';
+    budgBlock='<div class="g3">'
+      +'<div class="sc"><div class="sv">'+fmt(budget)+'</div><div class="sl">Бюджет</div></div>'
+      +'<div class="sc"><div class="sv '+rc+'">'+fmt(Math.abs(rem))+'</div><div class="sl">'+rl+'</div></div>'
+      +'</div>';
+  }
+
+  var fundsBlock='';
+  if(settings.funds.length>0){
+    fundsBlock='<h2>Средства</h2><div class="g2">'
+      +(ownF>0?'<div class="sc"><div class="sv green">'+fmt(ownF)+'</div><div class="sl">Свои</div></div>':'')
+      +(credF>0?'<div class="sc"><div class="sv blue">'+fmt(credF)+'</div><div class="sl">Кредит</div></div>':'')
+      +'</div><table><thead><tr><th>Источник</th><th>Тип</th><th class="r">Сумма</th></tr></thead><tbody>'+fundsRows+'</tbody></table>';
+  }
+
+  var planBlock='';
+  if(planned.length>0){
+    planBlock='<h2>Плановые расходы</h2><table><thead><tr><th>Описание</th><th>Категория</th><th>Зона</th><th>Заметка</th><th class="r">Сумма</th></tr></thead>'
+      +'<tbody>'+planRows+'</tbody>'
+      +'<tfoot><tr><td colspan="4">ИТОГО ПЛАН</td><td class="r" style="color:#5a7d91">'+fmt(pt)+'</td></tr></tfoot></table>';
+  }
+
+  var uname = currentUser ? 'Профиль: '+currentUser+' · ' : '';
+  var html='<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Отчёт</title>'
+    +'<style>'+css+'</style></head><body>'
+    +'<button class="pbtn" onclick="window.print()">🖨 Сохранить PDF</button>'
+    +'<h1>🏠 Отчёт по ремонту</h1><div class="sub">'+uname+'Сформирован: '+nowStr+'</div>'
+    +summGrid+budgBlock+fundsBlock
+    +'<h2>По категориям — факт</h2>'
+    +'<table><thead><tr><th>Категория</th><th class="r">Сумма</th><th class="r">Доля</th></tr></thead>'
+    +'<tbody>'+catRows+'</tbody><tfoot><tr><td>ИТОГО</td><td class="r">'+fmt(total)+'</td><td></td></tr></tfoot></table>'
+    +planBlock
+    +'<h2>Все расходы ('+expenses.length+')</h2>'
+    +'<table><thead><tr><th>Описание</th><th>Категория</th><th>Зона</th><th>Откуда</th><th>Дата</th><th class="r">Сумма</th></tr></thead>'
+    +'<tbody>'+expRows+'</tbody><tfoot><tr><td colspan="5">ИТОГО</td><td class="r">'+fmt(total)+'</td></tr></tfoot></table>'
+    +'</body></html>';
+
+  try{ pw.document.open(); pw.document.write(html); pw.document.close(); }
+  catch(err){
+    pw.close();
+    var b=new Blob([html],{type:'text/html;charset=utf-8'});
+    var u=URL.createObjectURL(b);
+    var a=document.createElement('a'); a.href=u; a.download='remont.html'; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(u); },10000);
+  }
+}
+
+// ══════════════════════════════════════════════
+// LIGHTBOX
+// ══════════════════════════════════════════════
+function openLB(expId, idx){
+  var e = expenses.filter(function(x){ return x.id===expId; })[0];
+  if(!e) return;
+  openLBDirect(e.photos||[], idx);
+}
+function openLBDirect(photos, idx){
+  lbPhotos=photos; lbIdx=idx; updateLB();
+  document.getElementById('lightbox').classList.add('open');
+}
+function updateLB(){
+  document.getElementById('lbImg').src=lbPhotos[lbIdx];
+  document.getElementById('lbCtr').textContent=lbPhotos.length>1?(lbIdx+1)+' / '+lbPhotos.length:'';
+  document.getElementById('lb-nav') && (document.getElementById('lb-nav').style.display=lbPhotos.length>1?'flex':'none');
+}
+function lbPrev(){ lbIdx=(lbIdx-1+lbPhotos.length)%lbPhotos.length; updateLB(); }
+function lbNext(){ lbIdx=(lbIdx+1)%lbPhotos.length; updateLB(); }
+function closeLB(){ document.getElementById('lightbox').classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+// OVERLAY HELPERS
+// ══════════════════════════════════════════════
+function openOverlay(id){
+  var el=document.getElementById(id);
+  el.classList.add('open');
+  el.onclick=function(e){ if(e.target===el) closeOverlay(id); };
+}
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+// CONFIRM HELPER
+// ══════════════════════════════════════════════
+function confirm2(msg, onYes){
+  var parts=msg.split('\n');
+  document.getElementById('confirmTitle').textContent=parts[0];
+  document.getElementById('confirmBody').textContent=parts.slice(1).join('\n');
+  document.getElementById('confirmYes').onclick=function(){ closeOverlay('confirmOverlay'); onYes(); };
+  document.getElementById('confirmNo').onclick=function(){ closeOverlay('confirmOverlay'); };
+  openOverlay('confirmOverlay');
+}
+
+// ══════════════════════════════════════════════
+// FAB FLASH
+// ══════════════════════════════════════════════
+function flashFab(text, color){
+  var fab=document.getElementById('mainFab');
+  var orig=fab.innerHTML;
+  fab.innerHTML=text; fab.style.background=color;
+  setTimeout(function(){ fab.innerHTML=orig; fab.style.background=''; },2200);
+}
+
+// ══════════════════════════════════════════════
+// WIRE UP BUTTONS (avoid onclick in HTML for plan/settings save)
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function(){
+  // Plan modal save
+  document.querySelector('#planOverlay .btn-save').onclick = savePlan2;
+  // Exp modal save
+  document.querySelector('#expOverlay .btn-save').onclick = saveExp2;
+  // Keyboard nav lightbox
+  document.addEventListener('keydown', function(e){
+    if(!document.getElementById('lightbox').classList.contains('open')) return;
+    if(e.key==='ArrowLeft') lbPrev();
+    if(e.key==='ArrowRight') lbNext();
+    if(e.key==='Escape') closeLB();
+  });
+  initApp();
+});
+</script>
+</body>
+</html>
